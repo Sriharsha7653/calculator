@@ -3,13 +3,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-
+import java.util.Stack;
 public class Calculator extends Frame implements ActionListener {
     //Initilizing
     Label lb;
     TextField Display;
     Button bt0,bt1,bt2,bt3,bt4,bt5,bt6,bt7,bt8,bt9,btadd,btmul,btsub,btdiv,btpow,btreset,btbackspace,bteql,btlight,btdark;
+    
     Calculator(){
         //LABEL
         lb= new Label("DEVELOPED BY SRIHARSHA M");
@@ -267,7 +267,6 @@ public class Calculator extends Frame implements ActionListener {
         }
         //RESET AND BACKSPACE BUTTON
         if(E.getSource()==btreset){
-            String inline=Display.getText();
             Display.setText("");
         }
         if(E.getSource()==btpow){
@@ -283,50 +282,92 @@ public class Calculator extends Frame implements ActionListener {
             }
         }
         if(E.getSource()==bteql){
-            int a,b,i;
-            char operator='+';
-            String beforesign="";
-            String aftersign="";
-            String expression=Display.getText();
-            for(i=0;i<expression.length();i++){
-                if(Character.isDigit(expression.charAt(i))){
-                    beforesign+=expression.charAt(i);
-                }
-                else{
-                    operator=expression.charAt(i);
-                    break;
-                }
-            }
-            aftersign=expression.substring(i+1);
-           a=Integer.parseInt(beforesign);
-           b=Integer.parseInt(aftersign);
-           int result=0;
-           switch (operator) {
-            case '+':
-                result=a+b;
-                break;
-           
-            case '-':
-                result=a-b;
-                break;
-            case 'x':
-                result=a*b;
-                break;
-            case '/':
-                try{
-                    result=a/b;
-                }
-                catch(Exception e){
-                    break;
-                }
-            case '^':
-                result=(int)Math.pow(a,b);
-                break;    
-                    
-           }
-           Display.setText(String.valueOf(result));
+            String inline=Display.getText();
+            String postfix=createpostfix(inline);
+            int evalauated_answer=evaluate(postfix);
+            Display.setText(Integer.toString(evalauated_answer));
         }
 
+    }
+    //CONVERT THE INFIX EXPRESSION TO POSTFIX
+    public static String createpostfix(String a){
+        String result="";
+        Stack<Character> st= new Stack<>();
+        for(int i =0;i<a.length();i++){
+            char ch = a.charAt(i);
+            if(Character.isDigit(ch)){
+                while(i < a.length() && Character.isDigit(a.charAt(i))){
+                        result += a.charAt(i);
+                         i++;
+                }
+                result += " ";
+                i--;
+            }
+            else if (ch=='('){
+                st.push(ch);
+            }
+            else if(ch==')'){
+                while(!st.isEmpty()&&st.peek()!='('){
+                    result+=st.pop()+" ";
+                }
+                st.pop();
+            }
+            else{
+                while(!st.isEmpty()&&precision(ch)<=precision(st.peek())){
+                    result+=st.pop()+" ";
+                }
+                st.push(ch);
+            }
+        }
+        while(!st.isEmpty()){
+            result+=st.pop()+" ";
+        }
+        return result.trim();
+        
+    }
+    //PRECISION CHECKER FOR THE OPERATOR 
+    public  static int precision(char ch){
+        switch(ch){
+            case 'x':
+            case '/':
+                return 2;
+            case '+':
+            case '-':
+                return 1;
+            case '^':
+                return 3;
+        }
+        return -1;
+    }
+    //EVALUATE THE POSTFIX EXPRESSION
+     public static int evaluate(String a){
+        Stack<Integer> st= new Stack<>();
+       String[] tokens= a.split(" ");
+       for(String token:tokens){
+            if(token.matches("\\d+")){
+                st.push(Integer.parseInt(token));
+            }
+            else{
+                int val2=st.pop();
+                int val1=st.pop();
+                switch (token.charAt(0)) {
+                    case '+':
+                        st.push(val1+val2);
+                        break;
+                    case '-':
+                        st.push(val1-val2);
+                        break;
+                    case 'x':
+                        st.push(val1*val2);
+                        break;
+                    case '/':
+                        st.push(val1/val2);
+                    case '^':
+                        st.push((int)Math.pow(val1,val2));
+                }   
+            }
+       }
+       return st.pop();
     }
     public static void main(String[] args) { 
        new Calculator();
